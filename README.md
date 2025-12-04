@@ -1,6 +1,18 @@
 # pilot-hdc-ovh-infra
 This is a IaC repository that contains all the necessary code to setup the infrastructure that will run Pilot-HDC on OVH cloud.
 
+## Manual steps
+Before you try to run the terraform code, you'll need to do certain steps in OVH:
+
+1) Create an apikey with the following permissions:
+```
+GET/POST/PUT/DELETE /cloud/project/*
+```
+
+2) Add the ssh key that will be used by default.
+
+3) Create the floating ips that will be used by the nginx VMs.
+
 ## Acknowledgements
 The development of the HealthDataCloud open source software was supported by the EBRAINS research infrastructure, funded from the European Union's Horizon 2020 Framework Programme for Research and Innovation under the Specific Grant Agreement No. 945539 (Human Brain Project SGA3) and H2020 Research and Innovation Action Grant Interactive Computing E-Infrastructure for the Human Brain Project ICEI 800858.
 
