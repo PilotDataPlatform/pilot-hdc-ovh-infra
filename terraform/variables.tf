@@ -46,3 +46,13 @@ variable "floating_ip_id_prod" {
   default     = ""
   description = "Floating IP ID for prod nginx (create in OVH UI after network exists)"
 }
+
+variable "kube_node_flavor" {
+  type    = string
+  default = "b3-16"
+}
+
+variable "kube_node_count" {
+  type    = number
+  default = 2
+}

@@ -1,0 +1,69 @@
+---
+# Certbot TLS setup for both environments
+# Each nginx server gets certs for domains pointing to it
+
+- name: Setup Let's Encrypt TLS (prod)
+  hosts: nginx-prod
+  become: true
+  vars_files:
+    - ../vars/sensitive.yml
+  vars:
+    domains:
+      - hdc.ebrains.eu
+  tasks:
+    - name: Install certbot and nginx plugin
+      apt:
+        name:
+          - certbot
+          - python3-certbot-nginx
+        state: present
+        update_cache: yes
+
+    - name: Obtain certificate and configure nginx
+      command: >
+        certbot --nginx
+        --non-interactive
+        --agree-tos
+        --email {{ admin_email }}
+        -d {{ domains | join(' -d ') }}
+      args:
+        creates: /etc/letsencrypt/live/{{ domains[0] }}/fullchain.pem
+
+    - name: Verify certbot timer is enabled
+      systemd:
+        name: certbot.timer
+        state: started
+        enabled: yes
+
+- name: Setup Let's Encrypt TLS (dev)
+  hosts: nginx-dev
+  become: true
+  vars_files:
+    - ../vars/sensitive.yml
+  vars:
+    domains:
+      - dev.hdc.ebrains.eu
+  tasks:
+    - name: Install certbot and nginx plugin
+      apt:
+        name:
+          - certbot
+          - python3-certbot-nginx
+        state: present
+        update_cache: yes
+
+    - name: Obtain certificate and configure nginx
+      command: >
+        certbot --nginx
+        --non-interactive
+        --agree-tos
+        --email {{ admin_email }}
+        -d {{ domains | join(' -d ') }}
+      args:
+        creates: /etc/letsencrypt/live/{{ domains[0] }}/fullchain.pem
+
+    - name: Verify certbot timer is enabled
+      systemd:
+        name: certbot.timer
+        state: started
+        enabled: yes
