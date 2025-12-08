@@ -1,4 +1,4 @@
-.PHONY: init fmt validate plan apply destroy ansible-ping ansible-harden
+.PHONY: init fmt validate plan apply destroy ansible-ping ansible
 
 # Terraform
 init:
@@ -25,5 +25,5 @@ terraform-all: init validate plan apply
 ansible-ping:
 	cd ansible && ansible nginx -m ping -e @vars/sensitive.yml
 
-ansible-harden:
-	cd ansible && ansible-playbook playbooks/ssh-hardening.yml -e @vars/sensitive.yml
+ansible:
+	cd ansible && ansible-playbook playbooks/site.yml -e @vars/sensitive.yml

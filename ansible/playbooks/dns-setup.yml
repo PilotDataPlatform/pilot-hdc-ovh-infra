@@ -1,0 +1,24 @@
+---
+- name: Configure DNS resolvers
+  hosts: nginx
+  become: true
+  tasks:
+    - name: Create resolved.conf.d directory
+      file:
+        path: /etc/systemd/resolved.conf.d
+        state: directory
+        mode: '0755'
+
+    - name: Configure DNS via drop-in
+      copy:
+        dest: /etc/systemd/resolved.conf.d/dns.conf
+        content: |
+          [Resolve]
+          DNS=1.1.1.1 1.0.0.1
+          FallbackDNS=8.8.8.8 8.8.4.4
+        mode: '0644'
+
+    - name: Restart systemd-resolved
+      systemd:
+        name: systemd-resolved
+        state: restarted

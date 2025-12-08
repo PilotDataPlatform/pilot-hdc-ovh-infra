@@ -1,0 +1,32 @@
+---
+- name: Setup Let's Encrypt TLS
+  hosts: nginx
+  become: true
+  vars_files:
+    - ../vars/sensitive.yml
+  tasks:
+    - name: Install certbot and nginx plugin
+      apt:
+        name:
+          - certbot
+          - python3-certbot-nginx
+        state: present
+        update_cache: yes
+
+    - name: Obtain certificate and configure nginx
+      command: >
+        certbot --nginx
+        --non-interactive
+        --agree-tos
+        --keep-until-expiring
+        --cert-name {{ cert_name }}
+        --email {{ admin_email }}
+        -d {{ domains | join(' -d ') }}
+      register: certbot_result
+      changed_when: "'Certificate not yet due for renewal' not in certbot_result.stdout"
+
+    - name: Verify certbot timer is enabled
+      systemd:
+        name: certbot.timer
+        state: started
+        enabled: yes

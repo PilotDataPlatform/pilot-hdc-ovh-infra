@@ -1,0 +1,42 @@
+---
+- name: Setup nginx reverse proxy
+  hosts: nginx-dev
+  become: true
+  vars_files:
+    - ../vars/sensitive.yml
+  tasks:
+    - name: Install nginx
+      apt:
+        name: nginx
+        state: present
+        update_cache: yes
+
+    - name: Configure nginx reverse proxy
+      copy:
+        dest: /etc/nginx/sites-available/default
+        content: |
+          upstream k8s_nodes {
+              server 10.0.0.132:30080;
+              server 10.0.0.246:30080;
+          }
+
+          server {
+              listen 80 default_server;
+              listen [::]:80 default_server;
+              server_name dev.hdc.ebrains.eu *.dev.hdc.ebrains.eu;
+
+              location / {
+                  proxy_pass http://k8s_nodes;
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto $scheme;
+              }
+          }
+      notify: Reload nginx
+
+  handlers:
+    - name: Reload nginx
+      service:
+        name: nginx
+        state: reloaded
