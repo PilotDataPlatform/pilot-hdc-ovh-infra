@@ -15,7 +15,11 @@
       stat:
         path: "{{ gitops_path }}/values.yaml"
       register: values_file
-      failed_when: not values_file.stat.exists
+
+    - name: Fail if values.yaml does not exist
+      fail:
+        msg: "values.yaml not found at {{ gitops_path }}/values.yaml. Please ensure the GitOps repository is properly configured."
+      when: not values_file.stat.exists
 
     - name: Create argocd namespace
       kubernetes.core.k8s:
@@ -57,22 +61,22 @@
           status: "True"
         wait_timeout: 300
 
+    - name: Verify root-app.yaml exists
+      stat:
+        path: "{{ gitops_repo_path }}/clusters/dev/root-app.yaml"
+      register: root_app_file
+
+    - name: Fail if root-app.yaml does not exist
+      fail:
+        msg: "root-app.yaml not found at {{ gitops_repo_path }}/clusters/dev/root-app.yaml. Please ensure the GitOps repository is properly configured."
+      when: not root_app_file.stat.exists
+
     - name: Apply root Application
       kubernetes.core.k8s:
         kubeconfig: "{{ kubeconfig }}"
         state: present
         src: "{{ gitops_repo_path }}/clusters/dev/root-app.yaml"
 
-    - name: Get admin password
-      kubernetes.core.k8s_info:
-        kubeconfig: "{{ kubeconfig }}"
-        kind: Secret
-        namespace: "{{ argocd_namespace }}"
-        name: argocd-initial-admin-secret
-      register: admin_secret
-      no_log: true
-
     - name: Display admin password retrieval command
       debug:
         msg: "Get password: kubectl -n {{ argocd_namespace }} get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d"
-      when: admin_secret.resources | length > 0
