@@ -1,4 +1,4 @@
-.PHONY: init fmt validate plan apply destroy ansible-ping ansible
+.PHONY: init fmt validate plan apply destroy ansible-deps ansible-ping ansible ansible-argocd-bootstrap
 
 # Terraform
 init:
@@ -22,8 +22,15 @@ destroy:
 terraform-all: init validate plan apply
 
 # Ansible
+ansible-deps:
+	pip install -r ansible/requirements.txt
+	ansible-galaxy collection install -r ansible/requirements.yml
+
 ansible-ping:
 	cd ansible && ansible nginx -m ping -e @vars/sensitive.yml
 
 ansible:
 	cd ansible && ansible-playbook playbooks/site.yml -e @vars/sensitive.yml
+
+ansible-argocd-bootstrap: ansible-deps
+	cd ansible && ansible-playbook playbooks/argocd-bootstrap.yml -e @vars/sensitive.yml
