@@ -11,6 +11,16 @@
         state: present
         update_cache: yes
 
+    - name: Create WebSocket map config
+      copy:
+        dest: /etc/nginx/conf.d/websocket-map.conf
+        content: |
+          map $http_upgrade $connection_upgrade {
+              default upgrade;
+              '' close;
+          }
+      notify: Reload nginx
+
     - name: Configure nginx reverse proxy
       copy:
         dest: /etc/nginx/sites-available/default
@@ -50,7 +60,7 @@
 
                   # WebSocket support
                   proxy_set_header Upgrade $http_upgrade;
-                  proxy_set_header Connection "upgrade";
+                  proxy_set_header Connection $connection_upgrade;
               }
           }
       notify: Reload nginx
