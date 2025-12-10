@@ -1,0 +1,7 @@
+# Argo CD Helm configuration (non-sensitive)
+argocd_helm_repo_name: pilotdataplatform
+argocd_helm_repo_url: https://pilotdataplatform.github.io/helm-charts/
+argocd_chart_name: argo-cd
+argocd_chart_version: "9.1.7"
+argocd_release_name: argo-cd
+argocd_namespace: argocd

@@ -1,0 +1,78 @@
+---
+- name: Bootstrap Argo CD
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files:
+    - ../vars/sensitive.yml
+    - ../vars/argocd.yml
+  vars:
+    kubeconfig: "{{ argocd_kubeconfig }}"
+    gitops_path: "{{ gitops_repo_path }}/clusters/dev/apps/argo-cd"
+
+  tasks:
+    - name: Verify GitOps repo values.yaml exists
+      stat:
+        path: "{{ gitops_path }}/values.yaml"
+      register: values_file
+      failed_when: not values_file.stat.exists
+
+    - name: Create argocd namespace
+      kubernetes.core.k8s:
+        kubeconfig: "{{ kubeconfig }}"
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: "{{ argocd_namespace }}"
+
+    - name: Add Helm repo
+      kubernetes.core.helm_repository:
+        name: "{{ argocd_helm_repo_name }}"
+        repo_url: "{{ argocd_helm_repo_url }}"
+
+    - name: Install Argo CD
+      kubernetes.core.helm:
+        kubeconfig: "{{ kubeconfig }}"
+        name: "{{ argocd_release_name }}"
+        chart_ref: "{{ argocd_helm_repo_name }}/{{ argocd_chart_name }}"
+        chart_version: "{{ argocd_chart_version }}"
+        release_namespace: "{{ argocd_namespace }}"
+        values_files:
+          - "{{ gitops_path }}/values.yaml"
+        wait: true
+        timeout: 10m0s
+        atomic: true
+
+    - name: Wait for Argo CD server to be ready
+      kubernetes.core.k8s_info:
+        kubeconfig: "{{ kubeconfig }}"
+        kind: Deployment
+        namespace: "{{ argocd_namespace }}"
+        name: "{{ argocd_release_name }}-server"
+        wait: true
+        wait_condition:
+          type: Available
+          status: "True"
+        wait_timeout: 300
+
+    - name: Apply root Application
+      kubernetes.core.k8s:
+        kubeconfig: "{{ kubeconfig }}"
+        state: present
+        src: "{{ gitops_repo_path }}/clusters/dev/root-app.yaml"
+
+    - name: Get admin password
+      kubernetes.core.k8s_info:
+        kubeconfig: "{{ kubeconfig }}"
+        kind: Secret
+        namespace: "{{ argocd_namespace }}"
+        name: argocd-initial-admin-secret
+      register: admin_secret
+      no_log: true
+
+    - name: Display admin password retrieval command
+      debug:
+        msg: "Get password: kubectl -n {{ argocd_namespace }} get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d"
+      when: admin_secret.resources | length > 0
