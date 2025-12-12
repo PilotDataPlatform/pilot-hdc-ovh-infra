@@ -28,6 +28,21 @@
           }
       notify: Reload nginx
 
+    - name: Verify stream block was inserted
+      command: grep -q "^stream {" /etc/nginx/nginx.conf
+      changed_when: false
+      failed_when: false
+      register: stream_check
+
+    - name: Fail if stream block not found
+      fail:
+        msg: "Stream block not inserted in nginx.conf. Verify 'http {' pattern exists for insertbefore to match."
+      when: stream_check.rc != 0
+
+    - name: Validate nginx configuration
+      command: nginx -t
+      changed_when: false
+
     - name: Configure TLS passthrough (port 443)
       copy:
         dest: /etc/nginx/stream.d/k8s-https.conf
@@ -71,6 +86,13 @@
                   proxy_set_header X-Forwarded-Proto $scheme;
               }
           }
+      notify: Reload nginx
+
+    - name: Ensure default site is enabled
+      file:
+        src: /etc/nginx/sites-available/default
+        dest: /etc/nginx/sites-enabled/default
+        state: link
       notify: Reload nginx
 
     - name: Disable old ArgoCD site config
