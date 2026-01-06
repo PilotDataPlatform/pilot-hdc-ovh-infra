@@ -1,0 +1,11 @@
+# State files - NEVER commit these
+*.tfstate
+*.tfstate.*
+.terraform.tfstate.lock.info
+
+# Provider plugins
+.terraform/
+
+# tfvars may contain secrets
+*.tfvars
+*.tfvars.json
