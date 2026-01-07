@@ -45,7 +45,7 @@ variable "kube_node_count" {
   default = 2
 }
 
-# Environment-specific variables (from config/{env}/{env}.tfvars)
+# Environment-specific variables (from config/{env}/terraform.tfvars)
 variable "env" {
   type = string
   validation {
