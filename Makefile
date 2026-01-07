@@ -1,4 +1,4 @@
-.PHONY: init fmt validate plan apply ansible-deps ansible-ping ansible ansible-argocd-bootstrap
+.PHONY: init fmt validate plan apply plan-dev plan-prod apply-dev apply-prod ansible-deps ansible-ping ansible ansible-argocd-bootstrap
 
 # Environment (default: dev)
 ENV ?= dev
