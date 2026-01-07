@@ -12,7 +12,7 @@ fi
 # Check tfvars exist (fail early for fresh clones)
 [[ -f config/base.tfvars ]] || { echo "Missing config/base.tfvars - copy from config/base.tfvars.example"; exit 1; }
 [[ -f "config/$env/terraform.tfvars" ]] || { echo "Missing config/$env/terraform.tfvars - copy from config/$env/terraform.tfvars.example"; exit 1; }
-
+[[ -f "config/$env/backend.tfbackend" ]] || { echo "Missing config/$env/backend.tfbackend - ensure it exists before running terraform"; exit 1; }
 # Require S3 credentials
 : "${AWS_ACCESS_KEY_ID:?Set AWS_ACCESS_KEY_ID from bootstrap output}"
 : "${AWS_SECRET_ACCESS_KEY:?Set AWS_SECRET_ACCESS_KEY from bootstrap output}"
