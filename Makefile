@@ -1,4 +1,4 @@
-.PHONY: init fmt validate plan apply plan-dev plan-prod apply-dev apply-prod ansible-deps ansible-ping ansible ansible-argocd-bootstrap
+.PHONY: init fmt validate plan apply plan-dev plan-prod apply-dev apply-prod ansible-deps ansible-ping ansible ansible-argocd-bootstrap ci-tf
 
 # Environment (default: dev)
 ENV ?= dev
@@ -45,3 +45,13 @@ ansible:
 
 ansible-argocd-bootstrap: ansible-deps
 	cd ansible && ansible-playbook playbooks/argocd-bootstrap.yml -e @vars/sensitive.yml
+
+# CI - Terraform static analysis
+ci-tf:
+	@for cmd in terraform tflint checkov; do \
+		command -v $$cmd >/dev/null || { echo "ERROR: $$cmd not found"; exit 1; }; \
+	done
+	cd terraform && terraform fmt -check
+	cd terraform && terraform validate
+	cd terraform && tflint --recursive
+	checkov -d terraform
