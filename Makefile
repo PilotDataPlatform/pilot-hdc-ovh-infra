@@ -1,4 +1,4 @@
-.PHONY: init fmt validate plan apply plan-dev plan-prod apply-dev apply-prod ansible-deps ansible-ping ansible ansible-argocd-bootstrap ci-tf
+.PHONY: init fmt validate plan apply plan-dev plan-prod apply-dev apply-prod ansible-deps ansible-ping ansible ansible-argocd-bootstrap init-keycloak plan-keycloak apply-keycloak ci-tf
 
 # Environment (default: dev)
 ENV ?= dev
@@ -45,6 +45,16 @@ ansible:
 
 ansible-argocd-bootstrap: ansible-deps
 	cd ansible && ansible-playbook playbooks/argocd-bootstrap.yml -e @vars/sensitive.yml
+
+# Keycloak Terraform
+init-keycloak:
+	cd terraform/keycloak && ./run.sh $(ENV) init
+
+plan-keycloak:
+	cd terraform/keycloak && ./run.sh $(ENV) plan
+
+apply-keycloak:
+	cd terraform/keycloak && ./run.sh $(ENV) apply
 
 # CI - Terraform static analysis
 ci-tf:
