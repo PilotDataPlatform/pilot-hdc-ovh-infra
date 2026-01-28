@@ -14,9 +14,9 @@ Manages Keycloak realm configuration for Pilot HDC OVH.
 ## Usage
 
 ```bash
-# Set environment
-export AWS_ACCESS_KEY_ID=...
-export AWS_SECRET_ACCESS_KEY=...
+# Set S3 creds (from gopass)
+export AWS_ACCESS_KEY_ID=$(gopass show -o ebrains-dev/hdc/ovh/s3-tfstate/access-key-id)
+export AWS_SECRET_ACCESS_KEY=$(gopass show -o ebrains-dev/hdc/ovh/s3-tfstate/secret-access-key)
 
 # Init, plan, apply
 ./run.sh dev init
@@ -50,6 +50,20 @@ cp config/dev/terraform.tfvars.example config/dev/terraform.tfvars
 | `keycloak_admin_user` | `dev/terraform.tfvars` | Keycloak admin username (sensitive) |
 | `keycloak_admin_password` | `dev/terraform.tfvars` | Keycloak admin password (sensitive) |
 | `test_admin_password` | `dev/terraform.tfvars` | Test user password (sensitive, dev only) |
+
+### Credentials (gopass)
+
+```
+ebrains-dev/hdc/ovh/
+├── keycloak-admin/
+│   ├── password
+│   └── username
+├── keycloak-test-admin-password
+├── s3-tfstate/
+│   ├── access-key-id
+│   └── secret-access-key
+└── vault-unseal-keys
+```
 
 ### Dev-Only Flags
 
