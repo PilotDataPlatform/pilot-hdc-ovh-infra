@@ -62,6 +62,8 @@ ci-tf:
 		command -v $$cmd >/dev/null || { echo "ERROR: $$cmd not found"; exit 1; }; \
 	done
 	cd terraform && terraform fmt -check
+	cd terraform/keycloak && terraform fmt -check
 	cd terraform && terraform validate
-	cd terraform && tflint --recursive
-	checkov -d terraform
+	cd terraform/keycloak && terraform validate
+	tflint --recursive terraform/
+	checkov -d terraform/

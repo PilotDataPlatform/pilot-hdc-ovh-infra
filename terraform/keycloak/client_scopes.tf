@@ -15,7 +15,7 @@ resource "keycloak_openid_group_membership_protocol_mapper" "group" {
 resource "keycloak_openid_client_scope" "username" {
   realm_id               = keycloak_realm.hdc.id
   name                   = "username"
-  consent_screen_text    = " "
+  consent_screen_text    = ""
   include_in_token_scope = true
 }
 
@@ -31,6 +31,6 @@ resource "keycloak_openid_client_scope" "openid" {
   # Custom scope matching CSCS pattern — built-in openid doesn't include token claim
   realm_id               = keycloak_realm.hdc.id
   name                   = "openid"
-  consent_screen_text    = " "
+  consent_screen_text    = ""
   include_in_token_scope = true
 }

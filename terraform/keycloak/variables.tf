@@ -60,3 +60,10 @@ check "no_direct_grants_in_prod" {
     error_message = "enable_direct_grants cannot be true in prod"
   }
 }
+
+check "no_test_user_in_prod" {
+  assert {
+    condition     = !(var.create_test_user && var.env == "prod")
+    error_message = "create_test_user cannot be true in prod"
+  }
+}

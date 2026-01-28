@@ -78,10 +78,11 @@ A custom `openid` client scope is created to match CSCS pattern. The built-in Ke
 
 ### Test User in State
 
-When `create_test_user = true`, the test user password is stored in Terraform state. Mitigations:
+When `create_test_user = true`, the `initial_password` value is stored in Terraform state (S3 backend). Mitigations:
+- `temporary = true` — user must change password on first login
+- Blocked in prod via `check` block
 - S3 backend with server-side encryption
-- Tight bucket ACLs
-- Dev environment only — prod uses federated IdP
+- Bucket ACLs restricted to authorized principals
 
 ## Provider
 
