@@ -4,6 +4,16 @@ data "keycloak_role" "offline_access" {
   name     = "offline_access"
 }
 
+data "keycloak_role" "uma_authorization" {
+  realm_id = keycloak_realm.hdc.id
+  name     = "uma_authorization"
+}
+
+data "keycloak_openid_client" "realm_management" {
+  realm_id  = keycloak_realm.hdc.id
+  client_id = "realm-management"
+}
+
 # Custom roles
 resource "keycloak_role" "platform_admin" {
   realm_id    = keycloak_realm.hdc.id
