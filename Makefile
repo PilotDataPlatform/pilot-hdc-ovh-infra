@@ -1,4 +1,4 @@
-.PHONY: init fmt validate plan apply plan-dev plan-prod apply-dev apply-prod ansible-deps ansible-ping ansible ansible-argocd-bootstrap init-keycloak plan-keycloak apply-keycloak ci-tf
+.PHONY: init fmt validate plan apply plan-dev plan-prod apply-dev apply-prod ansible-deps ansible-ping ansible ansible-argocd-bootstrap init-keycloak plan-keycloak apply-keycloak init-kong plan-kong apply-kong ci-tf
 
 # Environment (default: dev)
 ENV ?= dev
@@ -56,6 +56,16 @@ plan-keycloak:
 apply-keycloak:
 	cd terraform/keycloak && ./run.sh $(ENV) apply
 
+# Kong Terraform
+init-kong:
+	cd terraform/kong && ./run.sh $(ENV) init
+
+plan-kong:
+	cd terraform/kong && ./run.sh $(ENV) plan
+
+apply-kong:
+	cd terraform/kong && ./run.sh $(ENV) apply
+
 # CI - Terraform static analysis
 ci-tf:
 	@for cmd in terraform tflint checkov; do \
@@ -63,6 +73,7 @@ ci-tf:
 	done
 	cd terraform && terraform fmt -check
 	cd terraform/keycloak && terraform fmt -check
+	cd terraform/kong && terraform fmt -check
 	cd terraform && terraform validate
 	cd terraform/keycloak && terraform validate
 	tflint --recursive terraform/
