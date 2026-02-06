@@ -10,9 +10,9 @@ resource "keycloak_openid_client" "react_app" {
   direct_access_grants_enabled = var.enable_direct_grants
   implicit_flow_enabled        = false
 
-  valid_redirect_uris = ["https://portal.${var.domain}/*"]
-  web_origins         = ["https://portal.${var.domain}"]
-  base_url            = "https://portal.${var.domain}"
+  valid_redirect_uris = ["https://${var.domain}/*"]
+  web_origins         = ["https://${var.domain}"]
+  base_url            = "https://${var.domain}"
 }
 
 resource "keycloak_openid_client_default_scopes" "react_app" {
