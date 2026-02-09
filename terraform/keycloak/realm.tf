@@ -3,7 +3,7 @@ resource "keycloak_realm" "hdc" {
   display_name = "Pilot HDC OVH"
   enabled      = true
 
-  login_theme = "keycloak"
+  login_theme = "keycloak-antd"
 
   # Login settings
   login_with_email_allowed = true
