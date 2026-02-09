@@ -67,3 +67,14 @@ check "no_test_user_in_prod" {
     error_message = "create_test_user cannot be true in prod"
   }
 }
+
+variable "ebrains_oidc_client_id" {
+  description = "EBRAINS IAM OIDC client ID (hdcclient-dev or hdcclient-prod)"
+  type        = string
+}
+
+variable "ebrains_oidc_client_secret" {
+  description = "EBRAINS IAM OIDC client secret"
+  type        = string
+  sensitive   = true
+}
