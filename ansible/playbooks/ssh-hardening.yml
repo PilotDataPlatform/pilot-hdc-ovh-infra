@@ -1,5 +1,5 @@
 - name: SSH hardening
-  hosts: nginx
+  hosts: nginx:nfs
   become: yes
   tasks:
     - name: Disable password authentication
@@ -19,15 +19,23 @@
         path: /etc/ssh/sshd_config
         regexp: '^#?Port'
         line: 'Port {{ target_ssh_port }}'
+      register: port_changed
 
-    - name: Stop ssh.socket (systemd socket activation)
-      service:
+    # sshd-socket-generator reads Port from sshd_config and auto-generates
+    # the correct ListenStream entries. No manual override needed.
+    - name: Remove stale socket override if present
+      file:
+        path: /etc/systemd/system/ssh.socket.d
+        state: absent
+      register: override_removed
+
+    - name: Reload systemd (triggers sshd-socket-generator)
+      systemd:
+        daemon_reload: yes
+      when: port_changed.changed or override_removed.changed
+
+    - name: Restart ssh.socket
+      systemd:
         name: ssh.socket
-        state: stopped
-        enabled: no
-      ignore_errors: yes
-
-    - name: Restart ssh
-      service:
-        name: ssh
         state: restarted
+      when: port_changed.changed or override_removed.changed

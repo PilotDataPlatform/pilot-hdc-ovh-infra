@@ -4,3 +4,5 @@
 - import_playbook: nginx-stream-passthrough.yml
 - import_playbook: nginx-coming-soon-prod.yml
 - import_playbook: certbot-setup.yml
+# NFS server not included — run separately via: make ansible-nfs
+# Runs dist-upgrade + filesystem setup, too disruptive for routine site runs
