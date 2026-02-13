@@ -4,5 +4,7 @@ vlan_id      = 100
 subnet       = "10.0.0.0/24"
 subnet_start = "10.0.0.2"
 subnet_end   = "10.0.0.254"
-deploy_k8s   = true
+deploy_k8s      = true
+deploy_nfs      = true
+nfs_volume_size = 50
 # floating_ip_id_dev is in config/base.tfvars

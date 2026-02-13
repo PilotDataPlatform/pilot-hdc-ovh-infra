@@ -1,5 +1,5 @@
 - name: SSH hardening
-  hosts: nginx
+  hosts: nginx:nfs
   become: yes
   tasks:
     - name: Disable password authentication

@@ -1,4 +1,4 @@
-.PHONY: init fmt validate plan apply plan-dev plan-prod apply-dev apply-prod ansible-deps ansible-ping ansible ansible-argocd-bootstrap init-keycloak plan-keycloak apply-keycloak init-kong plan-kong apply-kong ci-tf
+.PHONY: init fmt validate plan apply plan-dev plan-prod apply-dev apply-prod ansible-deps ansible-ping ansible ansible-nfs ansible-argocd-bootstrap init-keycloak plan-keycloak apply-keycloak init-kong plan-kong apply-kong ci-tf
 
 # Environment (default: dev)
 ENV ?= dev
@@ -42,6 +42,9 @@ ansible-ping:
 
 ansible:
 	cd ansible && ansible-playbook playbooks/site.yml -e @vars/sensitive.yml
+
+ansible-nfs:
+	cd ansible && ansible-playbook playbooks/nfs-server.yml -e @vars/sensitive.yml
 
 ansible-argocd-bootstrap: ansible-deps
 	cd ansible && ansible-playbook playbooks/argocd-bootstrap.yml -e @vars/sensitive.yml

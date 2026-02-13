@@ -1,6 +1,6 @@
 ---
 - name: Configure DNS resolvers
-  hosts: nginx
+  hosts: nginx:nfs
   become: true
   tasks:
     - name: Create resolved.conf.d directory

@@ -87,3 +87,15 @@ variable "deploy_k8s" {
   default     = false
   description = "Whether to deploy K8s cluster in this environment"
 }
+
+variable "deploy_nfs" {
+  type        = bool
+  default     = false
+  description = "Whether to deploy NFS server in this environment"
+}
+
+variable "nfs_volume_size" {
+  type        = number
+  default     = 50
+  description = "NFS data volume size in GB"
+}

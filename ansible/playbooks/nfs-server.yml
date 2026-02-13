@@ -1,0 +1,74 @@
+---
+# NFS Server Setup
+#
+# NOT included in site.yml — run separately via: make ansible-nfs
+#
+# Prerequisites:
+#   1. Terraform: add deploy_nfs=true to dev tfvars, make apply-dev
+#   2. OVH Console: attach block volume to NFS instance
+#   3. SSH to NFS VM (via bastion) and verify device with lsblk (expect /dev/sdb)
+#   4. sensitive.yml: add nfs_hosts.dev.ip (private IP from TF nfs_addresses output)
+#   5. Bootstrap SSH hardening (first run only, VM still on port 22):
+#      cd ansible && ansible-playbook playbooks/ssh-hardening.yml -l nfs \
+#        -e ssh_port=22 -e @vars/sensitive.yml
+#   6. Run: make ansible-nfs
+#
+- hosts: nfs
+  become: true
+
+  tasks:
+    - name: Update and upgrade apt packages
+      apt:
+        upgrade: dist
+        update_cache: true
+
+    - name: Verify block device exists
+      stat:
+        path: "{{ nfs_block_device | default('/dev/sdb') }}"
+      register: block_dev
+
+    - name: Fail if block device not found
+      fail:
+        msg: >
+          Block device {{ nfs_block_device | default('/dev/sdb') }} not found.
+          Attach the volume in OVH Console and verify with lsblk.
+      when: not block_dev.stat.exists
+
+    - name: Create export directory
+      file:
+        path: /nfs/export
+        state: directory
+        mode: "0777"
+
+    - name: Create ext4 filesystem on data volume
+      filesystem:
+        fstype: ext4
+        dev: "{{ nfs_block_device | default('/dev/sdb') }}"
+
+    - name: Mount data volume
+      mount:
+        path: /nfs/export
+        src: "{{ nfs_block_device | default('/dev/sdb') }}"
+        fstype: ext4
+        opts: defaults,usrquota,grpquota
+        state: mounted
+
+    - name: Install NFS packages
+      apt:
+        pkg:
+          - nfs-common
+          - nfs-kernel-server
+        update_cache: true
+
+    - name: Configure exports
+      template:
+        src: ../templates/exports.j2
+        dest: /etc/exports
+      notify: restart nfs
+
+  handlers:
+    - name: restart nfs
+      service:
+        name: nfs-kernel-server
+        state: restarted
+        enabled: true
