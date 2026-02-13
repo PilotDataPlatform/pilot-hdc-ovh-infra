@@ -44,7 +44,7 @@ ansible:
 	cd ansible && ansible-playbook playbooks/site.yml -e @vars/sensitive.yml
 
 ansible-nfs:
-	cd ansible && ansible-playbook playbooks/nfs-server.yml -e @vars/sensitive.yml
+	cd ansible && ansible-playbook playbooks/nfs-server.yml -e @vars/sensitive.yml $(EXTRA_ARGS)
 
 ansible-argocd-bootstrap: ansible-deps
 	cd ansible && ansible-playbook playbooks/argocd-bootstrap.yml -e @vars/sensitive.yml

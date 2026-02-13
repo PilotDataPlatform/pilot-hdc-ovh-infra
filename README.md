@@ -43,14 +43,18 @@ The NFS server provides RWX persistent storage for K8s workloads. It runs on a p
    ```bash
    cd ansible && ansible nfs -m ping -e ssh_port=22 -e @vars/sensitive.yml
    ```
-8. Bootstrap SSH hardening and DNS (first run only, VM still on port 22):
+8. Bootstrap DNS + NFS (first run only, VM still on port 22):
+   ```bash
+   cd ansible && ansible-playbook playbooks/dns-setup.yml -l nfs \
+     -e ssh_port=22 -e @vars/sensitive.yml
+   make ansible-nfs EXTRA_ARGS="-e ssh_port=22"
+   ```
+9. SSH hardening (AFTER nfs-server.yml — run last so dist-upgrade reboot doesn't reset port):
    ```bash
    cd ansible && ansible-playbook playbooks/ssh-hardening.yml -l nfs \
      -e ssh_port=22 -e @vars/sensitive.yml
-   cd ansible && ansible-playbook playbooks/dns-setup.yml -l nfs \
-     -e @vars/sensitive.yml
    ```
-9. `make ansible-nfs`
+10. Subsequent runs: `make ansible-nfs`
 
 ### Verification
 
