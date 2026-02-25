@@ -7,7 +7,7 @@ resource "kong_service" "this" {
   port            = each.value.port
   path            = each.value.path
   retries         = 5
-  connect_timeout = 60000
-  write_timeout   = 60000
-  read_timeout    = 60000
+  connect_timeout = try(each.value.timeout, 60000)
+  write_timeout   = try(each.value.timeout, 60000)
+  read_timeout    = try(each.value.timeout, 60000)
 }

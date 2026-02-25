@@ -17,6 +17,9 @@ resource "keycloak_realm" "hdc" {
   user_managed_access = true
 
   security_defenses {
+    headers {
+      content_security_policy = "frame-src 'self'; frame-ancestors 'self' https://${var.domain}; object-src 'none';"
+    }
     brute_force_detection {
       permanent_lockout                = false
       failure_reset_time_seconds       = 43200 # 12h
