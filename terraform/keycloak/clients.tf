@@ -86,6 +86,50 @@ resource "keycloak_openid_user_session_note_protocol_mapper" "client_host" {
   claim_value_type = "String"
 }
 
+# --- CLI & File Transfer client (public, device auth flow) ---
+resource "keycloak_openid_client" "cli" {
+  realm_id  = keycloak_realm.hdc.id
+  client_id = "cli"
+  name      = "CLI & File Transfer"
+  enabled   = true
+
+  access_type                               = "PUBLIC"
+  standard_flow_enabled                     = false
+  direct_access_grants_enabled              = true
+  implicit_flow_enabled                     = false
+  oauth2_device_authorization_grant_enabled = true
+  frontchannel_logout_enabled               = true
+  full_scope_allowed                        = true
+}
+
+resource "keycloak_openid_client_default_scopes" "cli" {
+  realm_id  = keycloak_realm.hdc.id
+  client_id = keycloak_openid_client.cli.id
+
+  default_scopes = [
+    "profile",
+    "email",
+    "roles",
+    "web-origins",
+    "acr",
+    keycloak_openid_client_scope.clb_wiki_read.name,
+    keycloak_openid_client_scope.clb_wiki_write.name,
+    keycloak_openid_client_scope.team.name,
+  ]
+}
+
+resource "keycloak_openid_client_optional_scopes" "cli" {
+  realm_id  = keycloak_realm.hdc.id
+  client_id = keycloak_openid_client.cli.id
+
+  optional_scopes = [
+    "address",
+    "phone",
+    "offline_access",
+    "microprofile-jwt",
+  ]
+}
+
 # --- Kong API Gateway client (confidential) ---
 # Used by auth service for Keycloak user management
 # and by Kong for OIDC token introspection
