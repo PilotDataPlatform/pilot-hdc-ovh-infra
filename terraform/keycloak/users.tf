@@ -13,6 +13,10 @@ resource "keycloak_user" "admin" {
     value     = var.test_admin_password
     temporary = false
   }
+
+  lifecycle {
+    ignore_changes = [attributes]
+  }
 }
 
 resource "keycloak_user_roles" "admin_roles" {

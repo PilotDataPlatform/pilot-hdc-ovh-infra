@@ -29,6 +29,12 @@ resource "keycloak_realm" "hdc" {
   }
 }
 
+data "keycloak_realm_keys" "hdc" {
+  realm_id   = keycloak_realm.hdc.id
+  algorithms = ["RS256"]
+  status     = ["ACTIVE"]
+}
+
 resource "keycloak_realm_events" "hdc" {
   realm_id = keycloak_realm.hdc.id
 
