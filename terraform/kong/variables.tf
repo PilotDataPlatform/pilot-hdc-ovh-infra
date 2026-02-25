@@ -32,6 +32,5 @@ variable "oidc_client_secret" {
 
 variable "cors_origins" {
   type        = list(string)
-  default     = ["*"]
   description = "CORS allowed origins"
 }

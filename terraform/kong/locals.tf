@@ -11,6 +11,43 @@ locals {
       oidc       = true
       cors       = true
     }
+    "pilot-upload-gr" = {
+      host       = "upload.greenroom"
+      port       = 5079
+      path       = null
+      route_path = "/pilot/upload/gr"
+      methods    = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+      oidc       = true
+      cors       = true
+      timeout    = 180000
+    }
+    "pilot-download-gr" = {
+      host       = "download.greenroom"
+      port       = 5077
+      path       = null
+      route_path = "/pilot/portal/download/gr"
+      methods    = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+      oidc       = false
+      cors       = true
+    }
+    "pilot-download-core" = {
+      host       = "download.core"
+      port       = 5077
+      path       = null
+      route_path = "/pilot/portal/download/core"
+      methods    = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+      oidc       = false
+      cors       = true
+    }
+    "pilot-cli-bff-api" = {
+      host       = "bff-cli.utility"
+      port       = 5080
+      path       = null
+      route_path = "/pilot/cli"
+      methods    = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+      oidc       = true
+      cors       = false
+    }
     "pilot-user-auth" = {
       host       = "auth.utility"
       port       = 5061
