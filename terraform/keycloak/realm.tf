@@ -18,7 +18,7 @@ resource "keycloak_realm" "hdc" {
 
   security_defenses {
     headers {
-      content_security_policy = "frame-src 'self'; frame-ancestors 'self' https://${var.env == "prod" ? "" : "dev."}hdc.ebrains.eu; object-src 'none';"
+      content_security_policy = "frame-src 'self'; frame-ancestors 'self' https://${var.domain}; object-src 'none';"
     }
     brute_force_detection {
       permanent_lockout                = false
