@@ -207,3 +207,34 @@ resource "keycloak_openid_client_service_account_role" "kong_manage_users" {
   client_id               = data.keycloak_openid_client.realm_management.id
   role                    = "manage-users"
 }
+
+# --- XWiki client (confidential, OIDC auth) ---
+resource "keycloak_openid_client" "xwiki" {
+  realm_id  = keycloak_realm.hdc.id
+  client_id = "xwiki"
+  name      = "XWiki"
+  enabled   = true
+
+  access_type           = "CONFIDENTIAL"
+  standard_flow_enabled = true
+
+  root_url                        = "https://xwiki.${var.domain}"
+  valid_redirect_uris             = ["https://xwiki.${var.domain}/*"]
+  valid_post_logout_redirect_uris = ["+"]
+  web_origins                     = ["https://xwiki.${var.domain}"]
+}
+
+resource "keycloak_openid_client_default_scopes" "xwiki" {
+  realm_id  = keycloak_realm.hdc.id
+  client_id = keycloak_openid_client.xwiki.id
+
+  default_scopes = [
+    "profile",
+    "email",
+    "roles",
+    "web-origins",
+    keycloak_openid_client_scope.groups.name,
+    keycloak_openid_client_scope.openid.name,
+    keycloak_openid_client_scope.username.name,
+  ]
+}

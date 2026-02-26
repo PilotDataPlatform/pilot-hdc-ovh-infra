@@ -19,3 +19,8 @@ output "realm_rsa_public_key" {
   description = "RSA public key (base64 PEM) for JWT verification by HDC services"
   value       = data.keycloak_realm_keys.hdc.keys[0].public_key
 }
+
+output "xwiki_client_secret" {
+  value     = keycloak_openid_client.xwiki.client_secret
+  sensitive = true
+}
