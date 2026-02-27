@@ -10,6 +10,7 @@ resource "keycloak_openid_group_membership_protocol_mapper" "group" {
   client_scope_id = keycloak_openid_client_scope.groups.id
   name            = "group"
   claim_name      = "group"
+  full_path       = false
 }
 
 resource "keycloak_openid_client_scope" "username" {

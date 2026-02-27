@@ -215,10 +215,19 @@ resource "keycloak_openid_client" "xwiki" {
   name      = "XWiki"
   enabled   = true
 
-  access_type           = "CONFIDENTIAL"
-  standard_flow_enabled = true
+  access_type                  = "CONFIDENTIAL"
+  standard_flow_enabled        = true
+  implicit_flow_enabled        = true
+  direct_access_grants_enabled = true
+  service_accounts_enabled     = true
+
+  authorization {
+    policy_enforcement_mode = "PERMISSIVE"
+  }
 
   root_url                        = "https://xwiki.${var.domain}"
+  base_url                        = "https://xwiki.${var.domain}"
+  admin_url                       = "https://xwiki.${var.domain}"
   valid_redirect_uris             = ["https://xwiki.${var.domain}/*"]
   valid_post_logout_redirect_uris = ["+"]
   web_origins                     = ["https://xwiki.${var.domain}"]
@@ -237,4 +246,36 @@ resource "keycloak_openid_client_default_scopes" "xwiki" {
     keycloak_openid_client_scope.openid.name,
     keycloak_openid_client_scope.username.name,
   ]
+}
+
+# XWiki dedicated scope mappers (User Session Note)
+
+resource "keycloak_openid_user_session_note_protocol_mapper" "xwiki_client_id" {
+  realm_id  = keycloak_realm.hdc.id
+  client_id = keycloak_openid_client.xwiki.id
+  name      = "Client ID"
+
+  session_note     = "clientId"
+  claim_name       = "clientId"
+  claim_value_type = "String"
+}
+
+resource "keycloak_openid_user_session_note_protocol_mapper" "xwiki_client_ip" {
+  realm_id  = keycloak_realm.hdc.id
+  client_id = keycloak_openid_client.xwiki.id
+  name      = "Client IP Address"
+
+  session_note     = "clientAddress"
+  claim_name       = "clientAddress"
+  claim_value_type = "String"
+}
+
+resource "keycloak_openid_user_session_note_protocol_mapper" "xwiki_client_host" {
+  realm_id  = keycloak_realm.hdc.id
+  client_id = keycloak_openid_client.xwiki.id
+  name      = "Client Host"
+
+  session_note     = "clientHost"
+  claim_name       = "clientHost"
+  claim_value_type = "String"
 }
