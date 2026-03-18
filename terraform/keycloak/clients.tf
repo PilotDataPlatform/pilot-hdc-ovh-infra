@@ -294,7 +294,7 @@ resource "keycloak_openid_client" "guacamole" {
   standard_flow_enabled        = true
   direct_access_grants_enabled = false
   service_accounts_enabled     = true
-  implicit_flow_enabled        = false
+  implicit_flow_enabled        = true
 
   authorization {
     policy_enforcement_mode = "ENFORCING"
