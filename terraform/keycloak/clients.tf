@@ -500,3 +500,98 @@ resource "keycloak_openid_user_session_note_protocol_mapper" "superset_client_ho
   claim_name       = "clientHost"
   claim_value_type = "String"
 }
+
+# --- JupyterHub per-project clients (confidential, OIDC) ---
+
+resource "keycloak_openid_client" "jupyterhub" {
+  for_each = toset(var.workspace_projects)
+
+  realm_id    = keycloak_realm.hdc.id
+  client_id   = "jupyterhub-${each.value}"
+  name        = "JupyterHub-${each.value}"
+  description = "ClientID to be used by the ${each.value} JupyterHub."
+  enabled     = true
+
+  access_type                  = "CONFIDENTIAL"
+  standard_flow_enabled        = true
+  direct_access_grants_enabled = true
+  implicit_flow_enabled        = true
+  service_accounts_enabled     = true
+
+  valid_redirect_uris = [
+    "https://${var.domain}/workbench/${each.value}/j/hub/",
+    "https://${var.domain}/workbench/${each.value}/j/hub/oauth_callback",
+  ]
+
+  authentication_flow_binding_overrides {
+    browser_id = keycloak_authentication_flow.project[each.value].id
+  }
+}
+
+resource "keycloak_openid_client_default_scopes" "jupyterhub" {
+  for_each = toset(var.workspace_projects)
+
+  realm_id  = keycloak_realm.hdc.id
+  client_id = keycloak_openid_client.jupyterhub[each.value].id
+
+  default_scopes = [
+    "profile",
+    "email",
+    "roles",
+    "web-origins",
+    keycloak_openid_client_scope.groups.name,
+    keycloak_openid_client_scope.openid.name,
+  ]
+}
+
+resource "keycloak_openid_client_optional_scopes" "jupyterhub" {
+  for_each = toset(var.workspace_projects)
+
+  realm_id  = keycloak_realm.hdc.id
+  client_id = keycloak_openid_client.jupyterhub[each.value].id
+
+  optional_scopes = [
+    "address",
+    "phone",
+    "offline_access",
+    "microprofile-jwt",
+  ]
+}
+
+# service_accounts_enabled auto-creates these 3 — manage in TF to avoid drift
+
+resource "keycloak_openid_user_session_note_protocol_mapper" "jupyterhub_client_id" {
+  for_each = toset(var.workspace_projects)
+
+  realm_id  = keycloak_realm.hdc.id
+  client_id = keycloak_openid_client.jupyterhub[each.value].id
+  name      = "Client ID"
+
+  session_note     = "clientId"
+  claim_name       = "clientId"
+  claim_value_type = "String"
+}
+
+resource "keycloak_openid_user_session_note_protocol_mapper" "jupyterhub_client_ip" {
+  for_each = toset(var.workspace_projects)
+
+  realm_id  = keycloak_realm.hdc.id
+  client_id = keycloak_openid_client.jupyterhub[each.value].id
+  name      = "Client IP Address"
+
+  session_note     = "clientAddress"
+  claim_name       = "clientAddress"
+  claim_value_type = "String"
+}
+
+resource "keycloak_openid_user_session_note_protocol_mapper" "jupyterhub_client_host" {
+  for_each = toset(var.workspace_projects)
+
+  realm_id  = keycloak_realm.hdc.id
+  client_id = keycloak_openid_client.jupyterhub[each.value].id
+  name      = "Client Host"
+
+  session_note     = "clientHost"
+  claim_name       = "clientHost"
+  claim_value_type = "String"
+}
