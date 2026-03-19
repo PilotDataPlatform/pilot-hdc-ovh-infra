@@ -381,3 +381,122 @@ resource "keycloak_openid_user_session_note_protocol_mapper" "guacamole_client_h
   claim_name       = "clientHost"
   claim_value_type = "String"
 }
+
+# --- Superset per-project clients (confidential, OIDC) ---
+
+resource "keycloak_openid_client" "superset" {
+  for_each = toset(var.workspace_projects)
+
+  realm_id    = keycloak_realm.hdc.id
+  client_id   = "superset-${each.value}"
+  name        = "Superset-${each.value}"
+  description = "ClientID to be used by the ${each.value} superset."
+  enabled     = true
+
+  access_type                  = "CONFIDENTIAL"
+  standard_flow_enabled        = true
+  direct_access_grants_enabled = true
+  service_accounts_enabled     = true
+
+  root_url            = "https://${each.value}-superset.${var.domain}/*"
+  base_url            = "https://${each.value}-superset.${var.domain}/*"
+  admin_url           = "https://${each.value}-superset.${var.domain}/*"
+  valid_redirect_uris = ["https://${each.value}-superset.${var.domain}/*"]
+
+  authentication_flow_binding_overrides {
+    browser_id = keycloak_authentication_flow.project[each.value].id
+  }
+}
+
+resource "keycloak_openid_client_default_scopes" "superset" {
+  for_each = toset(var.workspace_projects)
+
+  realm_id  = keycloak_realm.hdc.id
+  client_id = keycloak_openid_client.superset[each.value].id
+
+  default_scopes = [
+    "acr",
+    "profile",
+    "email",
+    "roles",
+    "web-origins",
+    keycloak_openid_client_scope.clb_wiki_read.name,
+    keycloak_openid_client_scope.clb_wiki_write.name,
+    keycloak_openid_client_scope.team.name,
+  ]
+}
+
+resource "keycloak_openid_client_optional_scopes" "superset" {
+  for_each = toset(var.workspace_projects)
+
+  realm_id  = keycloak_realm.hdc.id
+  client_id = keycloak_openid_client.superset[each.value].id
+
+  optional_scopes = [
+    "address",
+    "phone",
+    "offline_access",
+    "microprofile-jwt",
+  ]
+}
+
+resource "keycloak_openid_group_membership_protocol_mapper" "superset_group" {
+  for_each = toset(var.workspace_projects)
+
+  realm_id  = keycloak_realm.hdc.id
+  client_id = keycloak_openid_client.superset[each.value].id
+  name      = "map_group"
+
+  claim_name = "groups"
+  full_path  = false
+}
+
+resource "keycloak_openid_user_property_protocol_mapper" "superset_username_sub" {
+  for_each = toset(var.workspace_projects)
+
+  realm_id  = keycloak_realm.hdc.id
+  client_id = keycloak_openid_client.superset[each.value].id
+  name      = "Map_username_to_sub"
+
+  user_property    = "username"
+  claim_name       = "sub"
+  claim_value_type = "String"
+}
+
+# service_accounts_enabled auto-creates these 3 — manage in TF to avoid drift
+
+resource "keycloak_openid_user_session_note_protocol_mapper" "superset_client_id" {
+  for_each = toset(var.workspace_projects)
+
+  realm_id  = keycloak_realm.hdc.id
+  client_id = keycloak_openid_client.superset[each.value].id
+  name      = "Client ID"
+
+  session_note     = "clientId"
+  claim_name       = "clientId"
+  claim_value_type = "String"
+}
+
+resource "keycloak_openid_user_session_note_protocol_mapper" "superset_client_ip" {
+  for_each = toset(var.workspace_projects)
+
+  realm_id  = keycloak_realm.hdc.id
+  client_id = keycloak_openid_client.superset[each.value].id
+  name      = "Client IP Address"
+
+  session_note     = "clientAddress"
+  claim_name       = "clientAddress"
+  claim_value_type = "String"
+}
+
+resource "keycloak_openid_user_session_note_protocol_mapper" "superset_client_host" {
+  for_each = toset(var.workspace_projects)
+
+  realm_id  = keycloak_realm.hdc.id
+  client_id = keycloak_openid_client.superset[each.value].id
+  name      = "Client Host"
+
+  session_note     = "clientHost"
+  claim_name       = "clientHost"
+  claim_value_type = "String"
+}

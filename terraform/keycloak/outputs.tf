@@ -30,3 +30,9 @@ output "guacamole_client_secrets" {
   value       = { for p in var.workspace_projects : p => keycloak_openid_client.guacamole[p].client_secret }
   sensitive   = true
 }
+
+output "superset_client_secrets" {
+  description = "Per-project Superset client secrets (for Vault)"
+  value       = { for p in var.workspace_projects : p => keycloak_openid_client.superset[p].client_secret }
+  sensitive   = true
+}
