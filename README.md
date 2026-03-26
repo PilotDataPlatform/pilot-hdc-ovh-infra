@@ -43,10 +43,8 @@ The NFS server provides RWX persistent storage for K8s workloads. It runs on a p
    ```bash
    cd ansible && ansible nfs -m ping -e ssh_port=22 -e @vars/sensitive.yml
    ```
-8. Bootstrap DNS + NFS (first run only, VM still on port 22):
+8. Bootstrap NFS (first run only, VM still on port 22):
    ```bash
-   cd ansible && ansible-playbook playbooks/dns-setup.yml -l nfs \
-     -e ssh_port=22 -e @vars/sensitive.yml
    make ansible-nfs EXTRA_ARGS="-e ssh_port=22"
    ```
 9. SSH hardening (AFTER nfs-server.yml — run last so dist-upgrade reboot doesn't reset port):
@@ -63,6 +61,50 @@ From any host on the private network (e.g. a K8s node):
 showmount -e <nfs-private-ip>        # expect /nfs/export 10.0.0.0/24
 mount -t nfs <nfs-private-ip>:/nfs/export /mnt && touch /mnt/test && rm /mnt/test
 ```
+
+## FreeIPA Server Setup
+
+Docker-based FreeIPA (`freeipa/freeipa-server:rocky-9-4.12.2`) for LDAP, Kerberos, HBAC, and sudo policy. Private-only VM with block volume for `/data` persistence. Domain: `dev.hdc.ebrains.eu`.
+
+**Not included in `make ansible`** — runs separately via `make ansible-freeipa`.
+
+### Steps
+
+1. Export S3 backend credentials (`AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` — see `terraform/bootstrap/README.md`)
+2. Add `deploy_freeipa = true` and `freeipa_volume_size = 20` to `terraform/config/dev/terraform.tfvars` (use `sops --input-type dotenv --output-type dotenv` to edit)
+3. `make plan-dev` then `make apply-dev`
+4. Attach the block volume to the FreeIPA instance in OVH Console
+5. Add FreeIPA VM private IP and secrets to `ansible/vars/sensitive.yml` (see `sensitive.yml.example`)
+6. Bootstrap FreeIPA (first run only, VM still on port 22):
+   ```bash
+   make ansible-freeipa EXTRA_ARGS="-e ssh_port=22"
+   ```
+7. SSH hardening (AFTER freeipa-server.yml — always last):
+   ```bash
+   cd ansible && ansible-playbook playbooks/ssh-hardening.yml -l freeipa \
+     -e ssh_port=22 -e @vars/sensitive.yml
+   ```
+8. Subsequent runs: `make ansible-freeipa`
+
+### Web UI
+
+The FreeIPA admin UI is accessible at `https://ldap.dev.hdc.ebrains.eu/ipa/ui/` via nginx SNI routing + L7 reverse proxy with a Let's Encrypt cert. Traffic flow: client → nginx-dev:443 (SNI) → 127.0.0.1:8443 (LE TLS termination) → FreeIPA private IP:443.
+
+The nginx passthrough config is in `nginx-stream-passthrough.yml` (deployed via `make ansible`, not `make ansible-freeipa`).
+
+### Verification
+
+```bash
+# CLI (from the FreeIPA VM)
+docker exec freeipa-freeipa-1 ipa --version
+docker exec freeipa-freeipa-1 ipa hbacrule-find
+docker exec freeipa-freeipa-1 ipa hostgroup-find
+
+# Web UI
+curl -sI https://ldap.dev.hdc.ebrains.eu/ipa/ui/ | head -5
+```
+
+To add a new project host: add its FQDN to `freeipa_managed_hosts` in `freeipa-server.yml`, then `make ansible-freeipa`.
 
 ## Secret Management (SOPS + age)
 

@@ -1,0 +1,250 @@
+---
+# FreeIPA Server Setup
+#
+# NOT included in site.yml — run separately via: make ansible-freeipa
+#
+# Bootstrap order: DNS → freeipa-server.yml → ssh-hardening (always last).
+# dist-upgrade may reboot; hardening must run after system is stable.
+# FreeIPA init takes 3-5 min on first boot — the playbook waits for it.
+#
+# Prerequisites:
+#   1. Terraform: add deploy_freeipa=true to dev tfvars, make apply-dev
+#   2. OVH Console: attach block volume to FreeIPA instance
+#   3. sensitive.yml: add freeipa_hosts.dev.ip + FreeIPA secrets
+#   4. Bootstrap FreeIPA (first run only, VM still on port 22):
+#      make ansible-freeipa EXTRA_ARGS="-e ssh_port=22"
+#   5. SSH hardening (AFTER freeipa-server.yml, always last):
+#      cd ansible && ansible-playbook playbooks/ssh-hardening.yml -l freeipa \
+#        -e ssh_port=22 -e @vars/sensitive.yml
+#   6. Subsequent runs: make ansible-freeipa
+#
+- name: Configure DNS resolvers
+  hosts: freeipa
+  become: true
+  tasks:
+    - include_tasks: ../tasks/dns-resolvers.yml
+
+- hosts: freeipa
+  become: true
+
+  vars:
+    freeipa_hostname: ldap.dev.hdc.ebrains.eu
+    freeipa_domain: dev.hdc.ebrains.eu
+    freeipa_realm: "{{ freeipa_domain | upper }}"
+    freeipa_container_name: freeipa-freeipa-1
+    freeipa_block_device: /dev/sdb
+    freeipa_data_dir: /srv/freeipa-data
+    freeipa_managed_hosts:
+      - ldap-workspacetest.dev.hdc.ebrains.eu
+    sudo_users:
+      - user: acascais
+        hosts:
+          - ldap-workspacetest.dev.hdc.ebrains.eu
+    deleted_sudo_users: []
+
+  tasks:
+    # --- System bootstrap ---
+
+    - name: Update and upgrade apt packages
+      apt:
+        upgrade: dist
+        update_cache: true
+
+    - name: Check if reboot is required
+      stat:
+        path: /var/run/reboot-required
+      register: reboot_required
+
+    - name: Reboot if required after dist-upgrade
+      reboot:
+        msg: "Reboot after dist-upgrade"
+        post_reboot_delay: 30
+      when: reboot_required.stat.exists
+
+    - name: Set hostname
+      hostname:
+        name: "{{ freeipa_hostname }}"
+
+    - name: Add hostname to /etc/hosts
+      lineinfile:
+        path: /etc/hosts
+        regexp: '.*{{ freeipa_hostname }}$'
+        line: "127.0.0.1 {{ freeipa_hostname }}"
+
+    # --- Block volume ---
+
+    - name: Verify block device exists
+      stat:
+        path: "{{ freeipa_block_device }}"
+      register: block_dev
+
+    - name: Fail if block device not found
+      fail:
+        msg: >
+          Block device {{ freeipa_block_device }} not found.
+          Attach the volume in OVH Console and verify with lsblk.
+      when: not block_dev.stat.exists
+
+    - name: Create ext4 filesystem on data volume
+      filesystem:
+        fstype: ext4
+        dev: "{{ freeipa_block_device }}"
+
+    - name: Mount data volume
+      mount:
+        path: "{{ freeipa_data_dir }}"
+        src: "{{ freeipa_block_device }}"
+        fstype: ext4
+        opts: defaults
+        state: mounted
+
+    - name: Set data directory permissions
+      file:
+        path: "{{ freeipa_data_dir }}"
+        state: directory
+        mode: "0755"
+
+    # --- Docker CE ---
+
+    - name: Install Docker prerequisites
+      apt:
+        pkg:
+          - ca-certificates
+          - curl
+          - gnupg
+        update_cache: true
+
+    - name: Create apt keyrings directory
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: "0755"
+
+    - name: Add Docker GPG key
+      get_url:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        dest: /etc/apt/keyrings/docker.asc
+        mode: "0644"
+
+    - name: Add Docker apt repository
+      apt_repository:
+        repo: >-
+          deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc]
+          https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
+        filename: docker
+
+    - name: Install Docker CE
+      apt:
+        pkg:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
+
+    # --- FreeIPA deployment ---
+
+    - name: Create FreeIPA directory
+      file:
+        path: /home/ubuntu/freeipa
+        state: directory
+        mode: "0750"
+
+    - name: Template docker-compose.yaml
+      template:
+        src: ../templates/freeipa/docker-compose.yaml.j2
+        dest: /home/ubuntu/freeipa/docker-compose.yaml
+        mode: "0600"
+      register: compose_changed
+
+    - name: Template systemd unit
+      template:
+        src: ../templates/freeipa/freeipa.service.j2
+        dest: /etc/systemd/system/freeipa.service
+      notify: reload systemd
+
+    - name: Flush handlers
+      meta: flush_handlers
+
+    - name: Recreate container if compose changed
+      command: docker compose up -d --force-recreate
+      args:
+        chdir: /home/ubuntu/freeipa
+      when: compose_changed.changed
+
+    - name: Enable and start FreeIPA service
+      systemd:
+        name: freeipa
+        enabled: true
+        state: started
+
+    # --- Wait for IPA init (first boot takes 3-5 min) ---
+
+    - name: Wait for FreeIPA to initialize
+      command: >
+        docker exec {{ freeipa_container_name }}
+        bash -c 'echo {{ freeipa_admin_password }} | kinit admin && kdestroy'
+      register: ipa_check
+      retries: 60
+      delay: 10
+      until: ipa_check.rc == 0
+      changed_when: false
+      no_log: true
+
+    # --- Configure FreeIPA (HBAC, hostgroups, sudo) ---
+
+    - name: Template configure_freeipa.sh
+      template:
+        src: ../templates/freeipa/configure_freeipa.sh.j2
+        dest: /tmp/configure_freeipa.sh
+        mode: "0700"
+      register: configure_script
+      no_log: true
+
+    - name: Template manage_sudo_users.sh
+      template:
+        src: ../templates/freeipa/manage_sudo_users.sh.j2
+        dest: /tmp/manage_sudo_users.sh
+        mode: "0700"
+      register: sudo_script
+      no_log: true
+
+    - name: Copy scripts into container
+      command: >
+        docker cp /tmp/{{ item }} {{ freeipa_container_name }}:/tmp/{{ item }}
+      loop:
+        - configure_freeipa.sh
+        - manage_sudo_users.sh
+      changed_when: false
+      when: configure_script.changed or sudo_script.changed
+
+    - name: Run configure_freeipa.sh
+      command: >
+        docker exec {{ freeipa_container_name }}
+        /bin/bash /tmp/configure_freeipa.sh
+      when: configure_script.changed
+
+    - name: Run manage_sudo_users.sh
+      command: >
+        docker exec {{ freeipa_container_name }}
+        /bin/bash /tmp/manage_sudo_users.sh
+      when: sudo_script.changed
+
+    - name: Clean up scripts from container
+      command: >
+        docker exec {{ freeipa_container_name }}
+        rm -f /tmp/configure_freeipa.sh /tmp/manage_sudo_users.sh
+      changed_when: false
+      when: configure_script.changed or sudo_script.changed
+
+    - name: Clean up scripts from host
+      file:
+        path: "/tmp/{{ item }}"
+        state: absent
+      loop:
+        - configure_freeipa.sh
+        - manage_sudo_users.sh
+
+  handlers:
+    - name: reload systemd
+      systemd:
+        daemon_reload: true
