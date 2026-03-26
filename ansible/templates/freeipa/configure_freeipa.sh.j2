@@ -1,0 +1,33 @@
+#!/bin/bash
+set -euo pipefail
+
+export KRB5CCNAME=FILE:/tmp/krb5cc_configure
+echo '{{ freeipa_admin_password }}' | kinit admin
+
+# Create HBAC services (global, only needs to run once)
+for svc in xrdp xrdp-sesman; do
+  ipa hbacsvc-show "$svc" &>/dev/null || ipa hbacsvc-add "$svc"
+done
+
+{% for host in freeipa_managed_hosts %}
+# --- {{ host }} ---
+hostgroup_name="hostgroup_{{ host }}"
+ipa hostgroup-show "$hostgroup_name" &>/dev/null || \
+  ipa hostgroup-add "$hostgroup_name" --desc "Group for {{ host }}"
+ipa hostgroup-add-member "$hostgroup_name" --hosts={{ host }} 2>/dev/null || true
+
+hbac_rule_name="access_{{ host }}project"
+ipa hbacrule-show "$hbac_rule_name" &>/dev/null || \
+  ipa hbacrule-add "$hbac_rule_name" --desc="HBAC rule for $hostgroup_name"
+ipa hbacrule-add-host "$hbac_rule_name" --hostgroups="$hostgroup_name" 2>/dev/null || true
+
+for svc in sshd sudo xrdp xrdp-sesman; do
+  ipa hbacrule-add-service "$hbac_rule_name" --hbacsvcs="$svc" 2>/dev/null || true
+done
+{% endfor %}
+
+# Extend admin password expiry by 1 year
+expire_date=$(date -u -d "+1 years" +"%Y-%m-%dT%H:%M:%SZ")
+ipa user-mod admin --password-expiration="$expire_date"
+
+kdestroy

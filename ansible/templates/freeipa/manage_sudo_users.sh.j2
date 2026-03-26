@@ -1,0 +1,28 @@
+#!/bin/bash
+set -euo pipefail
+
+export KRB5CCNAME=FILE:/tmp/krb5cc_sudo_mgmt
+echo '{{ freeipa_admin_password }}' | kinit admin
+
+{% for sudo_user in sudo_users %}
+echo "Configuring sudo rules for {{ sudo_user.user }}"
+{% for host in sudo_user.hosts %}
+rule_name="sudo-powers_{{ host }}"
+ipa sudorule-show "$rule_name" &>/dev/null || \
+  ipa sudorule-add "$rule_name" --cmdcat=all
+ipa sudorule-add-user "$rule_name" --users={{ sudo_user.user }} 2>/dev/null || true
+ipa sudorule-add-host "$rule_name" --hosts={{ host }} 2>/dev/null || true
+{% endfor %}
+{% endfor %}
+
+{% for deleted_user in deleted_sudo_users %}
+echo "Removing sudo rules for {{ deleted_user.user }}"
+{% for host in deleted_user.hosts %}
+rule_name="sudo-powers_{{ host }}"
+if ipa sudorule-show "$rule_name" &>/dev/null; then
+  ipa sudorule-remove-user "$rule_name" --users={{ deleted_user.user }} 2>/dev/null || true
+fi
+{% endfor %}
+{% endfor %}
+
+kdestroy

@@ -10,15 +10,19 @@
 #   1. Terraform: add deploy_nfs=true to dev tfvars, make apply-dev
 #   2. OVH Console: attach block volume to NFS instance
 #   3. sensitive.yml: add nfs_hosts.dev.ip (private IP from TF nfs_addresses output)
-#   4. Bootstrap DNS + NFS (first run only, VM still on port 22):
-#      cd ansible && ansible-playbook playbooks/dns-setup.yml -l nfs \
-#        -e ssh_port=22 -e @vars/sensitive.yml
+#   4. Bootstrap NFS (first run only, VM still on port 22):
 #      make ansible-nfs EXTRA_ARGS="-e ssh_port=22"
 #   5. SSH hardening (AFTER nfs-server.yml, always last):
 #      cd ansible && ansible-playbook playbooks/ssh-hardening.yml -l nfs \
 #        -e ssh_port=22 -e @vars/sensitive.yml
 #   6. Subsequent runs: make ansible-nfs
 #
+- name: Configure DNS resolvers
+  hosts: nfs
+  become: true
+  tasks:
+    - include_tasks: ../tasks/dns-resolvers.yml
+
 - hosts: nfs
   become: true
 

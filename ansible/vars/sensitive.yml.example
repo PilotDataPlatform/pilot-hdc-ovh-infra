@@ -17,6 +17,14 @@ nfs_hosts:
   dev:
     ip: 10.0.0.x  # private IP from: terraform output nfs_addresses
 
+freeipa_hosts:
+  dev:
+    ip: 10.0.0.x  # private IP from: terraform output freeipa_addresses
+
+# FreeIPA secrets
+freeipa_admin_password: changeme
+freeipa_ds_password: changeme
+
 admin_email: admin@my.domain
 
 # Argo CD bootstrap

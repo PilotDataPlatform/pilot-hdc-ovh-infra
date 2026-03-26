@@ -4,6 +4,9 @@
   become: true
   vars_files:
     - ../vars/sensitive.yml
+  vars:
+    freeipa_hostname: ldap.dev.hdc.ebrains.eu
+    freeipa_cert_name: ldap-dev
   tasks:
     - name: Install nginx stream module
       apt:
@@ -28,46 +31,46 @@
           }
       notify: Reload nginx
 
-    - name: Verify stream block was inserted
-      command: grep -q "^stream {" /etc/nginx/nginx.conf
-      changed_when: false
-      failed_when: false
-      register: stream_check
-
-    - name: Fail if stream block not found
-      fail:
-        msg: "Stream block not inserted in nginx.conf. Verify 'http {' pattern exists for insertbefore to match."
-      when: stream_check.rc != 0
-
-    - name: Validate nginx configuration
-      command: nginx -t
-      changed_when: false
-
-    - name: Configure TLS passthrough (port 443)
+    - name: Configure SNI-based TLS passthrough (port 443)
       copy:
-        dest: /etc/nginx/stream.d/k8s-https.conf
+        dest: /etc/nginx/stream.d/https-passthrough.conf
         content: |
-          # TODO: Replace with OVH Load Balancer when available
-          # Currently routing directly to K8s nodes with health checks
+          # SNI routing: inspect TLS ClientHello to route by hostname
+          map $ssl_preread_server_name $https_backend {
+              {{ freeipa_hostname }}  freeipa_https;
+              default                  k8s_https;
+          }
+
           upstream k8s_https {
           {% for node in nginx_hosts.dev.k8s_nodes %}
               server {{ node }}:30443 max_fails=3 fail_timeout=30s;
           {% endfor %}
           }
+
+          upstream freeipa_https {
+              server 127.0.0.1:8443;
+          }
+
           server {
               listen 443;
               listen [::]:443;
-              proxy_pass k8s_https;
+              proxy_pass $https_backend;
+              ssl_preread on;
               proxy_timeout 3600s;
               proxy_connect_timeout 60s;
           }
+      notify: Reload nginx
+
+    - name: Remove old k8s-only stream config
+      file:
+        path: /etc/nginx/stream.d/k8s-https.conf
+        state: absent
       notify: Reload nginx
 
     - name: Update HTTP config for passthrough (port 80)
       copy:
         dest: /etc/nginx/sites-available/default
         content: |
-          # TODO: Replace with OVH Load Balancer when available
           upstream k8s_http {
           {% for node in nginx_hosts.dev.k8s_nodes %}
               server {{ node }}:30080 max_fails=3 fail_timeout=30s;
@@ -99,6 +102,109 @@
       file:
         path: /etc/nginx/sites-enabled/argocd.conf
         state: absent
+      notify: Reload nginx
+
+    # --- FreeIPA L7 reverse proxy (LE cert for HSTS compatibility) ---
+
+    - name: Create certbot webroot directory
+      file:
+        path: /var/www/certbot
+        state: directory
+        mode: "0755"
+
+    - name: Check if LE cert exists
+      stat:
+        path: /etc/letsencrypt/live/{{ freeipa_cert_name }}/fullchain.pem
+      register: le_cert
+
+    - name: Deploy HTTP-only config for initial certbot
+      copy:
+        dest: /etc/nginx/sites-available/freeipa-ldap.conf
+        content: |
+          server {
+              listen 80;
+              listen [::]:80;
+              server_name {{ freeipa_hostname }};
+
+              location /.well-known/acme-challenge/ {
+                  root /var/www/certbot;
+              }
+
+              location / {
+                  return 301 https://$host$request_uri;
+              }
+          }
+      when: not le_cert.stat.exists
+      notify: Reload nginx
+
+    - name: Enable FreeIPA site
+      file:
+        src: /etc/nginx/sites-available/freeipa-ldap.conf
+        dest: /etc/nginx/sites-enabled/freeipa-ldap.conf
+        state: link
+      notify: Reload nginx
+
+    - name: Flush handlers before certbot
+      meta: flush_handlers
+
+    - name: Install certbot
+      apt:
+        name: certbot
+        state: present
+
+    - name: Obtain LE certificate for FreeIPA
+      command: >
+        certbot certonly --webroot
+        --webroot-path /var/www/certbot
+        --non-interactive
+        --agree-tos
+        --keep-until-expiring
+        --cert-name {{ freeipa_cert_name }}
+        --email {{ admin_email }}
+        -d {{ freeipa_hostname }}
+      register: certbot_result
+      changed_when: "'Certificate not yet due for renewal' not in certbot_result.stdout"
+
+    - name: Enable certbot auto-renewal timer
+      systemd:
+        name: certbot.timer
+        state: started
+        enabled: true
+
+    - name: Deploy FreeIPA HTTPS reverse proxy config
+      copy:
+        dest: /etc/nginx/sites-available/freeipa-ldap.conf
+        content: |
+          server {
+              listen 80;
+              listen [::]:80;
+              server_name {{ freeipa_hostname }};
+
+              location /.well-known/acme-challenge/ {
+                  root /var/www/certbot;
+              }
+
+              location / {
+                  return 301 https://$host$request_uri;
+              }
+          }
+
+          server {
+              listen 127.0.0.1:8443 ssl;
+              server_name {{ freeipa_hostname }};
+
+              ssl_certificate /etc/letsencrypt/live/{{ freeipa_cert_name }}/fullchain.pem;
+              ssl_certificate_key /etc/letsencrypt/live/{{ freeipa_cert_name }}/privkey.pem;
+
+              location / {
+                  proxy_pass https://{{ freeipa_hosts.dev.ip }};
+                  proxy_ssl_verify off;
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto https;
+              }
+          }
       notify: Reload nginx
 
   handlers:

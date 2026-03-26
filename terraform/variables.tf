@@ -99,3 +99,15 @@ variable "nfs_volume_size" {
   default     = 50
   description = "NFS data volume size in GB"
 }
+
+variable "deploy_freeipa" {
+  type        = bool
+  default     = false
+  description = "Whether to deploy FreeIPA server in this environment"
+}
+
+variable "freeipa_volume_size" {
+  type        = number
+  default     = 20
+  description = "FreeIPA data volume size in GB"
+}
