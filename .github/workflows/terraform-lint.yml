@@ -31,8 +31,10 @@ jobs:
           ./gitleaks detect --source . --verbose
 
       - name: fmt check
-        run: terraform fmt -check -recursive
-        working-directory: terraform
+        run: |
+          terraform fmt -check terraform/
+          terraform fmt -check terraform/keycloak/
+          terraform fmt -check terraform/kong/
 
       # Validate (needs init -backend=false + dummy vars for required inputs)
       - name: Validate infra
