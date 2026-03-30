@@ -87,12 +87,7 @@ sops-reencrypt:
 		rm -f "$$plain" "$$enc"; \
 	done
 	@echo "Re-encrypting ansible/vars/sensitive.yml"; \
-	plain=$$(mktemp --suffix=.yml); \
-	enc=$$(mktemp --suffix=.yml); \
-	sops -d ansible/vars/sensitive.yml > "$$plain" && \
-	sops -e "$$plain" > "$$enc" && \
-	mv "$$enc" ansible/vars/sensitive.yml; \
-	rm -f "$$plain" "$$enc"
+	sops updatekeys -y ansible/vars/sensitive.yml
 
 # CI - Terraform static analysis
 ci-tf:
