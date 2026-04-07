@@ -65,7 +65,9 @@ plan-keycloak:
 apply-keycloak:
 	cd terraform/keycloak && ./run.sh $(ENV) apply
 
-# Kong Terraform
+# Kong Terraform (manual only — not in CI)
+# Apply: export AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=...
+#        make plan-kong && make apply-kong
 init-kong:
 	cd terraform/kong && ./run.sh $(ENV) init
 
