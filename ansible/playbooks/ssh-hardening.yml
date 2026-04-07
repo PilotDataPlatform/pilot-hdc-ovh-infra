@@ -21,12 +21,14 @@
         path: /etc/ssh/sshd_config
         regexp: '^#?PasswordAuthentication'
         line: "PasswordAuthentication {{ 'yes' if 'guacamole' in group_names else 'no' }}"
+      register: password_auth_changed
 
     - name: Disable root login
       lineinfile:
         path: /etc/ssh/sshd_config
         regexp: '^#?PermitRootLogin'
         line: 'PermitRootLogin no'
+      register: root_login_changed
 
     # guacd 1.2.0 ships libssh2 1.8.0 which only supports ssh-rsa and old KEX algorithms.
     # These workarounds can be removed after upgrading guacd to 1.5+
@@ -47,6 +49,7 @@
         - regexp: '^PubkeyAcceptedAlgorithms'
           line: 'PubkeyAcceptedAlgorithms +ssh-rsa'
       when: "'guacamole' in group_names"
+      register: guacd_compat_changed
 
     # Detect SSH mode: Ubuntu 24.04 uses ssh.socket (systemd socket activation),
     # Ubuntu 22.04 uses ssh.service (standalone sshd)
@@ -69,10 +72,18 @@
       register: override_removed
       when: ssh_uses_socket
 
+    - name: Check if any sshd_config changed
+      set_fact:
+        sshd_config_changed: >-
+          {{ port_changed.changed or
+             password_auth_changed.changed or
+             root_login_changed.changed or
+             (guacd_compat_changed.results | default([]) | selectattr('changed') | list | length > 0) }}
+
     - name: Reload systemd (triggers sshd-socket-generator)
       systemd:
         daemon_reload: yes
-      when: ssh_uses_socket and (port_changed.changed or override_removed.changed)
+      when: ssh_uses_socket and (sshd_config_changed or override_removed.changed)
 
     - name: Ensure ssh.socket is enabled
       systemd:
@@ -84,7 +95,7 @@
       systemd:
         name: ssh.socket
         state: restarted
-      when: ssh_uses_socket and (port_changed.changed or override_removed.changed)
+      when: ssh_uses_socket and (sshd_config_changed or override_removed.changed)
 
     # --- Ubuntu 22.04 (ssh.service) ---
 
@@ -99,4 +110,4 @@
       systemd:
         name: ssh
         state: restarted
-      when: not ssh_uses_socket and port_changed.changed
+      when: not ssh_uses_socket and sshd_config_changed
