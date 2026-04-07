@@ -3,7 +3,7 @@
   become: yes
   tasks:
     - name: Add CI SSH public key
-      authorized_key:
+      ansible.posix.authorized_key:
         user: ubuntu
         key: "{{ ci_ssh_public_key }}"
         state: present

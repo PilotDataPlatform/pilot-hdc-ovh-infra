@@ -1,4 +1,4 @@
-.PHONY: init fmt validate plan apply plan-dev plan-prod apply-dev apply-prod ansible-deps ansible-ping ansible ansible-nfs ansible-freeipa ansible-guacamole ansible-argocd-bootstrap init-keycloak plan-keycloak apply-keycloak init-kong plan-kong apply-kong ci-tf sops-reencrypt
+.PHONY: init fmt validate plan apply plan-dev plan-prod apply-dev apply-prod ansible-deps ansible-ping ansible ansible-nfs ansible-freeipa ansible-guacamole ansible-argocd-bootstrap ansible-lint init-keycloak plan-keycloak apply-keycloak init-kong plan-kong apply-kong ci-tf sops-reencrypt
 
 # Environment (default: dev)
 ENV ?= dev
@@ -54,6 +54,13 @@ ansible-guacamole:
 
 ansible-argocd-bootstrap: ansible-deps
 	./ansible/run.sh ansible-playbook playbooks/argocd-bootstrap.yml
+
+ansible-lint:
+	docker run --rm -v "$$(pwd)":/work -w /work python:3.12-slim bash -c \
+		"pip install -q ansible-core ansible-lint yamllint && \
+		 ansible-galaxy collection install -r ansible/requirements.yml && \
+		 yamllint ansible/ && \
+		 ansible-lint ansible/"
 
 # Keycloak Terraform
 init-keycloak:
