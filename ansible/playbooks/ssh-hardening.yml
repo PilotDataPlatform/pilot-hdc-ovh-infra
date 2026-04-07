@@ -2,6 +2,13 @@
   hosts: nginx:nfs:freeipa:guacamole
   become: yes
   tasks:
+    - name: Add CI SSH public key
+      authorized_key:
+        user: ubuntu
+        key: "{{ ci_ssh_public_key }}"
+        state: present
+      when: "'prod' not in inventory_hostname"
+
     - name: Set SSH port
       lineinfile:
         path: /etc/ssh/sshd_config
