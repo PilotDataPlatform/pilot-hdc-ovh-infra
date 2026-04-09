@@ -6,8 +6,8 @@
   vars_files:
     - ../vars/argocd.yml
   vars:
-    kubeconfig: "{{ argocd_kubeconfig }}"
     argocd_env: "{{ argocd_env | default('dev') }}"
+    kubeconfig: "{{ argocd_kubeconfig[argocd_env] }}"
     gitops_path: "{{ gitops_repo_path }}/clusters/{{ argocd_env }}/apps/argo-cd"
 
   tasks:
@@ -40,7 +40,6 @@
       tempfile:
         state: directory
         suffix: argocd
-        mode: "0700"
       register: temp_dir
 
     - name: Render Argo CD Helm templates
