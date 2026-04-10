@@ -52,12 +52,13 @@ The NFS server provides RWX persistent storage for K8s workloads. It runs on a p
      -e ssh_port=22
    ```
 10. Subsequent runs: `make ansible-nfs`
+11. Target a specific env: `make ansible-nfs EXTRA_ARGS="-l nfs-prod"`
 
 ### Verification
 
 From any host on the private network (e.g. a K8s node):
 ```bash
-showmount -e <nfs-private-ip>        # expect /nfs/export 10.0.0.0/24
+showmount -e <nfs-private-ip>        # expect /nfs/export <env-subnet-cidr>
 mount -t nfs <nfs-private-ip>:/nfs/export /mnt && touch /mnt/test && rm /mnt/test
 ```
 

@@ -24,8 +24,10 @@ gitops_repo_path: ENC[AES256_GCM,data:KttStyJ99Ceu5RyzQsHnw8WLUg9Ifnus3ZcVwRUgj0
 nfs_hosts:
     dev:
         ip: ENC[AES256_GCM,data:BqZ3fnjo3V4SPA==,iv:oMoE1tC+6QcCAjr1h3Qk4jpuNz0Ao9Ei/J7sG5DHdQI=,tag:9sWlP8jNRRQ9U8ySU6XwzQ==,type:str]
+        network: ENC[AES256_GCM,data:Gzf+simLr3Mh6do=,iv:bEtVsuHyDrQc7w+v9TMR4mTn5N/cdPqEmmTPUcQWY48=,tag:NTjoiCXH1ddyRFblcF7xkQ==,type:str]
     prod:
         ip: ENC[AES256_GCM,data:PYLTjzCGXfRm0w==,iv:HVdTUMxwOUEP8jJwuTTvIICBN81GAYgARLdzQKkZ0ts=,tag:t4Zi0/z3QcEeXQX1VivYuQ==,type:str]
+        network: ENC[AES256_GCM,data:keyc8anSWvOtFWY=,iv:/kKn6I8Vt6y/lhtwgaJHI3xAGRZ32N5kAJLtznNoRYc=,tag:h2rJlp9j8abkkEDWNjl/Jg==,type:str]
 freeipa_hosts:
     dev:
         ip: ENC[AES256_GCM,data:R9AW57RHtdxt,iv:TJbuc08DfUL21W5h1FtWM52MDcRzGLR90ziApwZ4q1w=,tag:GH0KaREYcEgRdMEKzVxjeQ==,type:str]
@@ -71,8 +73,8 @@ sops:
             Qm8wUHFValVVaElHdHNMd2h3aDJzSmsKq171USAVJ2oAJK1qSQS4v6kZI1pfq7J1
             XMlaFfC+FQqcaCBSp+S3OV1NyNR9SHqUwQRR60PrZ9NsHQVdTs5jaQ==
             -----END AGE ENCRYPTED FILE-----
-    lastmodified: "2026-04-09T14:02:03Z"
-    mac: ENC[AES256_GCM,data:iUauYB4l/YuyXMDtfz6zIpdnxivHDb8tiUdzN51r4bxNaGptq//1MerftAY4MaYzXzwyfSEK0u/R9m4Ycf0NbWQdeqPkIulztV7Vq+/Y3vZWpoYUQ80KIg5qQfzocvy8bO8vQzJdaQTRi8LAhY+x221ykUvyet4B2Y3UFRCVjUI=,iv:kM1Y8XKbqrMpf/x9RZVAzzXWD8BHXK4xHKUR9C0MMCE=,tag:Rf+SKPvS2OZO+XH4WkOMjw==,type:str]
+    lastmodified: "2026-04-10T08:27:12Z"
+    mac: ENC[AES256_GCM,data:qIvdeCe1Pnez/vFK7TuyLypkls7EhaCbjzt+U8oPGv96A/OJHVlJtZklExZjZzjEaWhHlo6ZqLI0Wi4WUUq3u4Ew3Js2rhlaZxu4KofhtwI3fdnxR7pLVGfAorADDM5eFwgz20JhVQsaPiAj8maR0Ua7IHDaxK9egr9ZpFjmPNQ=,iv:b2eesOrTmMvFqDULDS3L6LKR0viE2v3g52sUtxKyBJo=,tag:6RsnQe1VCj1uaOYFNlDJig==,type:str]
     pgp: []
     unencrypted_suffix: _unencrypted
     version: 3.7.3
