@@ -15,8 +15,8 @@ Manages Keycloak realm configuration for Pilot HDC OVH.
 
 ```bash
 # Set S3 creds (from gopass)
-export AWS_ACCESS_KEY_ID=$(gopass show -o ebrains-dev/hdc/ovh/s3-tfstate/access-key-id)
-export AWS_SECRET_ACCESS_KEY=$(gopass show -o ebrains-dev/hdc/ovh/s3-tfstate/secret-access-key)
+export AWS_ACCESS_KEY_ID=$(gopass show -o ebrains/hdc/ovh/s3-tfstate/access-key-id)
+export AWS_SECRET_ACCESS_KEY=$(gopass show -o ebrains/hdc/ovh/s3-tfstate/secret-access-key)
 
 # Init, plan, apply
 ./run.sh dev init
@@ -59,10 +59,11 @@ ebrains-dev/hdc/ovh/
 │   ├── password
 │   └── username
 ├── keycloak-test-admin-password
-├── s3-tfstate/
-│   ├── access-key-id
-│   └── secret-access-key
 └── vault-unseal-keys
+
+ebrains/hdc/ovh/s3-tfstate/
+├── access-key-id
+└── secret-access-key
 ```
 
 ### Dev-Only Flags

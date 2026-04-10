@@ -5,17 +5,17 @@
 | Workflow | Trigger | Scope | Environment |
 |---|---|---|---|
 | **Terraform Lint** | PR to main | `terraform/**` | - |
-| **Terraform Deploy** | Push to main | infra + keycloak | dev |
+| **Terraform Deploy** | Push to main / manual dispatch | infra + keycloak (dev), infra (prod) | dev, prod |
 | **Ansible Lint** | PR to main | `ansible/**` | - |
 | **Ansible Deploy** | Manual (workflow_dispatch) | site/nfs/freeipa/guacamole | dev |
 
 ### Terraform Lint
 
-Runs on PRs that touch `terraform/**`. Steps: gitleaks secret scan, `terraform fmt -check`, `terraform validate` (infra + keycloak + kong), tflint, checkov.
+Runs on PRs that touch `terraform/**`. Steps: gitleaks secret scan, `terraform fmt -check` (infra + keycloak), `terraform validate` (infra + keycloak), tflint (recursive, includes kong), checkov (recursive, includes kong — static analysis for security misconfigs and compliance violations in TF resources).
 
 ### Terraform Deploy
 
-Auto plan+apply on push to main. Matrix: `infra` and `keycloak` modules in parallel. Same-job plan+apply, no artifact passing (plan files contain decrypted secrets). Concurrency groups: one run per module at a time.
+**Dev**: auto plan+apply on push to main. Matrix: `infra` and `keycloak` modules in parallel. **Prod**: manual dispatch (`deploy_prod: true`), infra module only (keycloak/kong prod tfvars not yet created). Same-job plan+apply in both cases, no artifact passing (plan files contain decrypted secrets). Concurrency groups: one run per module+env at a time.
 
 ### Ansible Lint
 
@@ -39,7 +39,8 @@ gh workflow run "Ansible Deploy" -f playbook=guacamole -f extra_args="-e ssh_por
 |---|---|---|
 | **Kong TF** | Separate state backend, infrequent changes | `make plan-kong && make apply-kong` |
 | **ArgoCD bootstrap** | One-time setup, requires kubeconfig | `make ansible-argocd-bootstrap` |
-| **Prod environment** | Deliberately excluded from CI/CD, manual deploys only | TF: `make plan-prod && make apply-prod`. Ansible: `./ansible/run.sh` with prod inventory |
+| **Prod TF (keycloak, kong)** | Prod tfvars not yet created for these modules | Manual via `run.sh prod plan && run.sh prod apply` |
+| **Prod Ansible** | No CI runner access to prod hosts | `./ansible/run.sh` with prod inventory |
 | **SSH hardening** | Included in `site` playbook (CI runs it), but standalone runs are manual | `./ansible/run.sh ansible-playbook playbooks/ssh-hardening.yml -l <group> -e @vars/sensitive.yml` |
 | **NFS/FreeIPA/Guacamole** | Available via dispatch but first run needs `-e ssh_port=22` | `make ansible-nfs`, `make ansible-freeipa`, `make ansible-guacamole` (see README for bootstrap steps) |
 
