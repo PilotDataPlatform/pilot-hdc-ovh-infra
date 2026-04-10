@@ -82,6 +82,8 @@ nginx uses the TLS **Server Name Indication** header to route port 443 traffic *
 
 Port 80 is proxied to K8s (NodePort 30080) for HTTP-to-HTTPS redirects and ACME challenges.
 
+**Important**: The nginx stream block owns port 443. No `sites-enabled` config may include `listen 443`: this conflicts with the stream block and prevents nginx from starting. Certbot's `--nginx` plugin will inject `listen 443 ssl` into site configs; use `certonly --webroot` instead, or remove any certbot-added 443 listeners after issuance.
+
 ## Virtual Machines
 
 | VM | Role | OS | Block Storage |
