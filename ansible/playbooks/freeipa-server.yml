@@ -212,26 +212,24 @@
         - configure_freeipa.sh
         - manage_sudo_users.sh
       changed_when: false
-      when: configure_script.changed or sudo_script.changed
 
     - name: Run configure_freeipa.sh
       command: >
         docker exec {{ freeipa_container_name }}
         /bin/bash /tmp/configure_freeipa.sh
-      when: configure_script.changed
+      changed_when: false
 
     - name: Run manage_sudo_users.sh
       command: >
         docker exec {{ freeipa_container_name }}
         /bin/bash /tmp/manage_sudo_users.sh
-      when: sudo_script.changed
+      changed_when: false
 
     - name: Clean up scripts from container
       command: >
         docker exec {{ freeipa_container_name }}
         rm -f /tmp/configure_freeipa.sh /tmp/manage_sudo_users.sh
       changed_when: false
-      when: configure_script.changed or sudo_script.changed
 
     - name: Clean up scripts from host
       file:
