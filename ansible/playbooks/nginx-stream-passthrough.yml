@@ -194,6 +194,25 @@
       when: has_freeipa | bool
       notify: Reload nginx
 
+    - name: Remove obsolete hdc-prod renewal config
+      file:
+        path: /etc/letsencrypt/renewal/hdc-prod.conf
+        state: absent
+
+    - name: Check nginx active state
+      command: systemctl is-active nginx.service
+      register: nginx_active
+      failed_when: false
+      changed_when: false
+
+    # After a systemd re-exec with broken config, nginx ends up in `failed`
+    # state — the Reload handler can't revive it without reset-failed first.
+    - name: Reset-failed and start nginx
+      shell: |
+        systemctl reset-failed nginx.service
+        systemctl start nginx.service
+      when: nginx_active.stdout != "active"
+
   handlers:
     - name: Reload nginx
       service:

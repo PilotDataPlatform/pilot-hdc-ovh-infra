@@ -150,7 +150,6 @@ Kong's Terraform module requires `kubectl port-forward` to the Kong Admin API an
 | Keycloak realm + clients | Terraform | `terraform/keycloak/*.tf` |
 | Kong routes + plugins | Terraform | `terraform/kong/*.tf` |
 | nginx SNI routing | Ansible | `ansible/playbooks/nginx-stream-passthrough.yml` |
-| Certbot (LE certs for FreeIPA) | Ansible | `ansible/playbooks/certbot-setup.yml` |
 | NFS server setup | Ansible | `ansible/playbooks/nfs-server.yml` |
 | FreeIPA server setup | Ansible | `ansible/playbooks/freeipa-server.yml` |
 | Guacamole VM provisioning | Ansible | `ansible/playbooks/guacamole-vm.yml` |
