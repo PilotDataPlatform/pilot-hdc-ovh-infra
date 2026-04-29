@@ -18,6 +18,7 @@ GET/POST/PUT/DELETE /cloud/project/*
 | Doc                                          | Covers                                                               |
 |----------------------------------------------|----------------------------------------------------------------------|
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture, data flows, component boundaries                |
+| [docs/SERVICE-LEVEL-INFRASTRUCTURE.md](docs/SERVICE-LEVEL-INFRASTRUCTURE.md) | Service-level networking diagram explanation, internal/external connections |
 | [docs/CICD.md](docs/CICD.md)                 | GitHub Actions workflows, secrets, what is / isn't automated         |
 | [docs/NFS-SETUP.md](docs/NFS-SETUP.md)       | NFS server bring-up (RWX storage for K8s)                            |
 | [docs/WORKBENCH-SETUP.md](docs/WORKBENCH-SETUP.md) | FreeIPA + Guacamole desktop VMs (identity + remote desktop)     |
