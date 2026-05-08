@@ -444,7 +444,8 @@
         block: |
           base_url="{{ pilotcli_api_base }}/"
           url_bff="{{ pilotcli_api_base }}/cli"
-          url_keycloak="https://iam.ebrains.eu/auth/realms/hbp/protocol/openid-connect"
+          url_keycloak="https://iam.hdc.ebrains.eu/realms/hdc/protocol/openid-connect"
+          url_harbor="https://127.0.0.1"
           keycloak_device_client_id="cli"
         marker: "# {mark} ANSIBLE MANAGED BLOCK — PILOTCLI"
 
