@@ -22,6 +22,8 @@ GET/POST/PUT/DELETE /cloud/project/*
 | [docs/CICD.md](docs/CICD.md)                 | GitHub Actions workflows, secrets, what is / isn't automated         |
 | [docs/NFS-SETUP.md](docs/NFS-SETUP.md)       | NFS server bring-up (RWX storage for K8s)                            |
 | [docs/WORKBENCH-SETUP.md](docs/WORKBENCH-SETUP.md) | FreeIPA + Guacamole desktop VMs (identity + remote desktop)     |
+| [API documentation](https://pilotdataplatform.github.io/pilot-hdc-service-docs/) | Generated API docs for all services (Swagger/OpenAPI)                 |
+| [Kubernetes management documentation](https://github.com/PilotDataPlatform/pilot-hdc-platform-gitops) | GitOps repo with K8s manifests, ArgoCD setup, management docs |
 
 ## VM Services (quick reference)
 
